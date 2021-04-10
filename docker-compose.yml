@@ -12,12 +12,11 @@ services:
     networks:
     - front
     depends_on:
-    - web
-    - adminer
+    - fpm
 
-  web:
-    image: php-kase:v1
-    build: php
+  fpm:
+    image: php-fpm:v1
+    build: php-fpm
     volumes:
     - ./code:/code
     networks:
@@ -25,7 +24,8 @@ services:
     - back
 
   sender:
-    image: php-kase:v1
+    image: php-cli:v1
+    build: php-cli
     command: php /code/sender.php
     volumes:
     - ./code:/code
@@ -33,13 +33,12 @@ services:
     - back
     restart: on-failure
     depends_on:
-      composer:
-        condition: service_started
       queue:
         condition: service_healthy
 
   receiver:
-    image: php-kase:v1
+    image: php-cli:v1
+    build: php-cli
     command: php /code/receiver.php
     volumes:
     - ./code:/code
@@ -48,13 +47,11 @@ services:
     - back
     restart: on-failure
     depends_on:
-      composer:
-        condition: service_started
       queue:
         condition: service_healthy
 
   db:
-    image: mysql:8.0.23
+    image: mariadb:10
     environment:
       MYSQL_ROOT_PASSWORD: xyz
       MYSQL_DATABASE: dev
@@ -67,7 +64,7 @@ services:
     - back
 
   queue:
-    image: rabbitmq-kase:v1
+    image: rabbitmq:v1
     build: rabbitmq
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:15672"]
@@ -77,22 +74,7 @@ services:
     volumes:
     - queue:/var/lib/rabbitmq
     networks:
-    - front
     - back
-
-  adminer:
-    image: adminer:4.8.0
-    environment:
-      ADMINER_DEFAULT_SERVER: db
-    networks:
-    - front
-    - back
-
-  composer:
-    image: php-kase:v1
-    volumes:
-      - ./code:/app
-    command: composer install --ignore-platform-reqs
 
 networks:
   front:

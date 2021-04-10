@@ -1,25 +1,38 @@
 <?php
 
-require_once __DIR__ . '/vendor/autoload.php';
+// https://github.com/rabbitmq/rabbitmq-tutorials/blob/master/php-amqp/send.php
 
-use PhpAmqpLib\Connection\AMQPStreamConnection;
-use PhpAmqpLib\Message\AMQPMessage;
+//Establish connection to AMQP
+$connection = new AMQPConnection();
+$connection->setHost('queue');
+$connection->setLogin('guest');
+$connection->setPassword('guest');
+$connection->connect();
+//Create and declare channel
+$channel = new AMQPChannel($connection);
+//AMQPC Exchange is the publishing mechanism
+$exchange = new AMQPExchange($channel);
 
-$connection = new AMQPStreamConnection('queue', 5672, 'guest', 'guest');
-$channel = $connection->channel();
-$channel->queue_declare('hello', false, true, false, false);
+try{
+	$routing_key = 'hello';
 
-$cnt = 1;
-while(true) {
-  $msg = new AMQPMessage("Hello World $cnt!",
-    array('delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT)
-  );
-  $channel->basic_publish($msg, '', 'hello');
-  echo "Sent Hello World $cnt!\n";
-  $cnt++;
-  $waitSeconds = rand(1,3);
-  sleep($waitSeconds);
+	$queue = new AMQPQueue($channel);
+	$queue->setName($routing_key);
+	$queue->setFlags(AMQP_NOPARAM);
+	$queue->declareQueue();
+
+  $cnt = 1;
+  while(true) {
+    $message = "howdy-do $cnt";
+    $exchange->publish($message, $routing_key);
+    echo "Sent $message!\n";
+    $cnt++;
+    $waitSeconds = rand(1,3);
+    sleep($waitSeconds);
+  }
+
+	$connection->disconnect();
+}catch(Exception $ex){
+	print_r($ex);
 }
 
-$channel->close();
-$connection->close();
