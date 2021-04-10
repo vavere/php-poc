@@ -15,8 +15,8 @@ services:
     - fpm
 
   fpm:
-    image: php-fpm:v1
-    build: php-fpm
+    image: php:zib-1
+    build: php
     volumes:
     - ./code:/code
     networks:
@@ -24,8 +24,8 @@ services:
     - back
 
   sender:
-    image: php-cli:v1
-    build: php-cli
+    image: php:zib-1
+    build: php
     command: php /code/sender.php
     volumes:
     - ./code:/code
@@ -37,8 +37,8 @@ services:
         condition: service_healthy
 
   receiver:
-    image: php-cli:v1
-    build: php-cli
+    image: php:zib-1
+    build: php
     command: php /code/receiver.php
     volumes:
     - ./code:/code
@@ -64,7 +64,7 @@ services:
     - back
 
   queue:
-    image: rabbitmq:v1
+    image: rabbitmq:zib-1
     build: rabbitmq
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:15672"]
